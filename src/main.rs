@@ -1,14 +1,6 @@
 use std::env;
 
 mod task_1;
-mod task_2;
-mod task_3;
-mod task_4;
-mod task_5;
-mod task_6;
-mod task_7;
-mod task_8;
-mod task_9;
 mod task_10;
 mod task_11;
 mod task_12;
@@ -19,11 +11,19 @@ mod task_16;
 mod task_17;
 mod task_18;
 mod task_19;
+mod task_2;
 mod task_20;
 mod task_21;
 mod task_22;
 mod task_23;
 mod task_24;
+mod task_3;
+mod task_4;
+mod task_5;
+mod task_6;
+mod task_7;
+mod task_8;
+mod task_9;
 
 fn main() {
     let arg = env::args().nth(1);
@@ -79,7 +79,7 @@ fn main() {
                 "23e" => task_23::run_e(),
                 "24" => task_24::run(),
                 "24e" => task_24::run_e(),
-                _ => println!("Unresolved task")
+                _ => println!("Unresolved task"),
             };
         }
         None => println!("Provide task"),

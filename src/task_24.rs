@@ -99,16 +99,19 @@ pub fn run() {
     let input = File::open("inputs/task_24").unwrap();
     let input = BufReader::new(input);
 
-    let weights = input
+    let mut weights = input
         .lines()
         .filter_map(|s| s.ok())
         .map(|l| l.parse::<i32>())
         .filter_map(|s| s.ok())
         .collect::<Vec<i32>>();
 
+    weights.sort();
+    weights.reverse();
+
     let balance = find_balance(&weights);
 
-    let fills = fill(&weights, balance);
+    let fills = fill(&weights, balance, 0);
     println!("Result: {}", fills.len());
 }
 
@@ -121,27 +124,41 @@ fn find_balance(weights: &Vec<i32>) -> i32 {
     weights.iter().sum::<i32>() / 3
 }
 
-fn fill(weights: &Vec<i32>, target: i32) -> Vec<Vec<i32>> {
-    let mut result = vec![];
-    println!("Debugging: {}", weights.len());
-    for i in 0..weights.len() {
-        if target == weights[i] {
-            result.push(vec![weights[i]]);
-        } else if target > weights[i] {
+fn fill(weights: &Vec<i32>, target: i32, count: usize) -> Vec<Vec<i32>> {
+    if count == 0 {
+        for c in 1..weights.len() - 2 {
+            let r = fill(weights, target, c);
+            println!("Found: {:?}", r);
+        }
+        return vec![];
+    } else if count == 1 {
+        let mut result = vec![];
+        for i in 0..weights.len() {
+            if weights[i] == target {
+                result.push(vec![target]);
+            }
+        }
+        return result;
+    } else {
+        let mut i = 0;
+        let mut result = vec![];
+        while i < weights.len() && weights[i] < target {
             let filled = fill(
                 &weights
                     .clone()
                     .into_iter()
                     .enumerate()
-                    .filter_map(|(n, e)| if i == n { None } else { Some(e) })
+                    .filter_map(|(n, e)| if n == i { None } else { Some(e) })
                     .collect(),
                 target - weights[i],
+                count - 1,
             );
             for mut f in filled {
                 f.push(weights[i]);
                 result.push(f);
             }
+            i += 1;
         }
+        return result;
     }
-    result
 }
