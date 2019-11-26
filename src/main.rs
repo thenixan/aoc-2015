@@ -23,6 +23,7 @@ mod task_20;
 mod task_21;
 mod task_22;
 mod task_23;
+mod task_24;
 
 fn main() {
     let arg = env::args().nth(1);
@@ -76,6 +77,8 @@ fn main() {
                 "22e" => task_22::run_e(),
                 "23" => task_23::run(),
                 "23e" => task_23::run_e(),
+                "24" => task_24::run(),
+                "24e" => task_24::run_e(),
                 _ => println!("Unresolved task")
             };
         }
