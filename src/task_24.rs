@@ -107,7 +107,9 @@ pub fn run() {
         .collect::<Vec<i32>>();
 
     let balance = find_balance(&weights);
-    println!("Result: {}", result.e_q());
+
+    let fills = fill(&weights, balance);
+    println!("Result: {}", fills.len());
 }
 
 pub fn run_e() {
@@ -119,7 +121,27 @@ fn find_balance(weights: &Vec<i32>) -> i32 {
     weights.iter().sum::<i32>() / 3
 }
 
-fn evaluate(weights: &Vec<i32>, balance: i32) -> Vec<Vec<i32>> {
-    let result = vec![];
+fn fill(weights: &Vec<i32>, target: i32) -> Vec<Vec<i32>> {
+    let mut result = vec![];
+    println!("Debugging: {}", weights.len());
+    for i in 0..weights.len() {
+        if target == weights[i] {
+            result.push(vec![weights[i]]);
+        } else if target > weights[i] {
+            let filled = fill(
+                &weights
+                    .clone()
+                    .into_iter()
+                    .enumerate()
+                    .filter_map(|(n, e)| if i == n { None } else { Some(e) })
+                    .collect(),
+                target - weights[i],
+            );
+            for mut f in filled {
+                f.push(weights[i]);
+                result.push(f);
+            }
+        }
+    }
     result
 }
