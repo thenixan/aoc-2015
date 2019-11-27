@@ -109,71 +109,72 @@ pub fn run() {
         .filter_map(|s| s.ok())
         .collect::<Vec<i32>>();
 
+    weights.sort();
+    weights.reverse();
+    // Result: [1, 89, 97, 103, 109, 113] - 10952264083
+    // Result: [113, 109, 107, 103, 79, 1] - 10723906903
+
     let balance = find_balance(&weights);
 
-    let fills = fill(&weights, balance, 0);
+    let fills = fill(&weights, balance, 0, 3);
     let legs = fills[0].clone();
-    println!("Result: {:?}-{}", legs, Layout::raw_e_q(&legs));
+    println!("Result: {:?} - {}", legs, Layout::raw_e_q(&legs));
 }
 
 pub fn run_e() {
     let input = File::open("inputs/task_24").unwrap();
     let input = BufReader::new(input);
+
+    let mut weights = input
+        .lines()
+        .filter_map(|s| s.ok())
+        .map(|l| l.parse::<i32>())
+        .filter_map(|s| s.ok())
+        .collect::<Vec<i32>>();
+
+    let balance = find_balance(&weights);
+
+    let fills = fill(&weights, balance, 0, 4);
+    let legs = fills[0].clone();
+    println!("Result: {:?} - {}", legs, Layout::raw_e_q(&legs));
 }
 
 fn find_balance(weights: &Vec<i32>) -> i32 {
     weights.iter().sum::<i32>() / 3
 }
 
-fn fill(weights: &Vec<i32>, target: i32, count: usize) -> Vec<Vec<i32>> {
+fn fill(weights: &Vec<i32>, target: i32, count: usize, iterations: i8) -> Vec<Vec<i32>> {
     if count == 0 {
         for c in 1..weights.len() {
-            let found_in_legs = &mut fill(weights, target, c);
-            found_in_legs.sort_by(|a, b| match a.len().cmp(&b.len()) {
-                Ordering::Equal => Layout::raw_e_q(&a).cmp(&Layout::raw_e_q(b)),
-                Ordering::Less => Ordering::Less,
-                Ordering::Greater => Ordering::Greater,
-            });
+            let found_in_legs = &mut fill(weights, target, c, iterations);
+            found_in_legs.sort_by(|a, b| Layout::raw_e_q(&a).cmp(&Layout::raw_e_q(b)));
             for legs_variant in found_in_legs {
-                let filtered_weights: Vec<i32> = weights
-                    .clone()
-                    .into_iter()
-                    .filter_map(|e| {
-                        if legs_variant.contains(&e) {
-                            None
-                        } else {
-                            Some(e)
+                let mut result = vec![legs_variant.clone()];
+                for it in 1..iterations {
+                    let flattened_result =
+                        result.clone().into_iter().flatten().collect::<Vec<i32>>();
+                    let filtered_weights: Vec<i32> = weights
+                        .clone()
+                        .into_iter()
+                        .filter_map(|e| {
+                            if flattened_result.contains(&e) {
+                                None
+                            } else {
+                                Some(e)
+                            }
+                        })
+                        .collect();
+
+                    let mut c2 = 1;
+                    while c2 < filtered_weights.len() && it as usize == result.len() {
+                        let next_found = fill(&filtered_weights, target, c2, iterations);
+                        if !next_found.is_empty() {
+                            result.push(next_found.first().unwrap().clone());
                         }
-                    })
-                    .collect();
-                for c2 in 1..filtered_weights.len() {
-                    let second_variant = fill(&filtered_weights, target, c2);
-                    if !second_variant.is_empty() {
-                        let s = second_variant.first().unwrap().clone();
-                        let third_weights: Vec<i32> = weights
-                            .clone()
-                            .into_iter()
-                            .filter_map(|e| {
-                                if legs_variant.contains(&e) || s.contains(&e) {
-                                    None
-                                } else {
-                                    Some(e)
-                                }
-                            })
-                            .collect();
-                        if s.iter().sum::<i32>() == target
-                            && third_weights.iter().sum::<i32>() == target
-                        {
-                            println!(
-                                "Found: f-{}, s-{}, t-{}",
-                                legs_variant.len(),
-                                s.len(),
-                                third_weights.len()
-                            );
-                            return vec![legs_variant.clone(), s, third_weights];
-                        }
+                        c2 += 1;
                     }
                 }
+                return result;
             }
         }
         return vec![];
@@ -194,7 +195,12 @@ fn fill(weights: &Vec<i32>, target: i32, count: usize) -> Vec<Vec<i32>> {
                 .into_iter()
                 .filter_map(|e| if e == weights[i] { None } else { Some(e) })
                 .collect();
-            let filled = fill(&filtered_weights, target - weights[i], count - 1);
+            let filled = fill(
+                &filtered_weights,
+                target - weights[i],
+                count - 1,
+                iterations,
+            );
             for mut f in filled {
                 f.push(weights[i]);
                 result.push(f);
