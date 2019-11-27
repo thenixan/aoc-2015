@@ -33,6 +33,9 @@ impl Package {
 }
 
 impl Layout {
+    fn raw_e_q(weights: &Vec<i32>) -> u128 {
+        weights.iter().fold(1u128, |s, i| s * *i as u128)
+    }
     fn e_q(&self) -> u128 {
         self.weights
             .iter()
@@ -106,13 +109,11 @@ pub fn run() {
         .filter_map(|s| s.ok())
         .collect::<Vec<i32>>();
 
-    weights.sort();
-    weights.reverse();
-
     let balance = find_balance(&weights);
 
     let fills = fill(&weights, balance, 0);
-    println!("Result: {}", fills.len());
+    let legs = fills[0].clone();
+    println!("Result: {:?}-{}", legs, Layout::raw_e_q(&legs));
 }
 
 pub fn run_e() {
@@ -126,9 +127,54 @@ fn find_balance(weights: &Vec<i32>) -> i32 {
 
 fn fill(weights: &Vec<i32>, target: i32, count: usize) -> Vec<Vec<i32>> {
     if count == 0 {
-        for c in 1..weights.len() - 2 {
-            let r = fill(weights, target, c);
-            println!("Found: {:?}", r);
+        for c in 1..weights.len() {
+            let found_in_legs = &mut fill(weights, target, c);
+            found_in_legs.sort_by(|a, b| match a.len().cmp(&b.len()) {
+                Ordering::Equal => Layout::raw_e_q(&a).cmp(&Layout::raw_e_q(b)),
+                Ordering::Less => Ordering::Less,
+                Ordering::Greater => Ordering::Greater,
+            });
+            for legs_variant in found_in_legs {
+                let filtered_weights: Vec<i32> = weights
+                    .clone()
+                    .into_iter()
+                    .filter_map(|e| {
+                        if legs_variant.contains(&e) {
+                            None
+                        } else {
+                            Some(e)
+                        }
+                    })
+                    .collect();
+                for c2 in 1..filtered_weights.len() {
+                    let second_variant = fill(&filtered_weights, target, c2);
+                    if !second_variant.is_empty() {
+                        let s = second_variant.first().unwrap().clone();
+                        let third_weights: Vec<i32> = weights
+                            .clone()
+                            .into_iter()
+                            .filter_map(|e| {
+                                if legs_variant.contains(&e) || s.contains(&e) {
+                                    None
+                                } else {
+                                    Some(e)
+                                }
+                            })
+                            .collect();
+                        if s.iter().sum::<i32>() == target
+                            && third_weights.iter().sum::<i32>() == target
+                        {
+                            println!(
+                                "Found: f-{}, s-{}, t-{}",
+                                legs_variant.len(),
+                                s.len(),
+                                third_weights.len()
+                            );
+                            return vec![legs_variant.clone(), s, third_weights];
+                        }
+                    }
+                }
+            }
         }
         return vec![];
     } else if count == 1 {
@@ -142,17 +188,13 @@ fn fill(weights: &Vec<i32>, target: i32, count: usize) -> Vec<Vec<i32>> {
     } else {
         let mut i = 0;
         let mut result = vec![];
+        let mut filtered_weights = weights.clone();
         while i < weights.len() && weights[i] < target {
-            let filled = fill(
-                &weights
-                    .clone()
-                    .into_iter()
-                    .enumerate()
-                    .filter_map(|(n, e)| if n == i { None } else { Some(e) })
-                    .collect(),
-                target - weights[i],
-                count - 1,
-            );
+            filtered_weights = filtered_weights
+                .into_iter()
+                .filter_map(|e| if e == weights[i] { None } else { Some(e) })
+                .collect();
+            let filled = fill(&filtered_weights, target - weights[i], count - 1);
             for mut f in filled {
                 f.push(weights[i]);
                 result.push(f);
