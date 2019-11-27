@@ -1,101 +1,8 @@
-use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-#[derive(Eq, PartialEq, Clone)]
-struct Layout {
-    weights: Vec<Package>,
-}
-
-#[derive(Eq, PartialEq, Clone, Copy)]
-enum Placement {
-    Legs,
-    Trunk1,
-    Trunk2,
-}
-
-impl Default for Placement {
-    fn default() -> Self {
-        Placement::Legs
-    }
-}
-
-#[derive(Eq, PartialEq, Clone, Copy)]
-struct Package {
-    weight: i32,
-    placement: Placement,
-}
-
-impl Package {
-    fn new(weight: i32, placement: Placement) -> Self {
-        Package { weight, placement }
-    }
-}
-
-impl Layout {
-    fn raw_e_q(weights: &Vec<i32>) -> u128 {
-        weights.iter().fold(1u128, |s, i| s * *i as u128)
-    }
-    fn e_q(&self) -> u128 {
-        self.weights
-            .iter()
-            .filter_map(|p| {
-                if p.placement == Placement::Legs {
-                    Some(p.weight)
-                } else {
-                    None
-                }
-            })
-            .fold(1u128, |s, i| s * i as u128)
-    }
-
-    fn weight(&self, placement: Placement) -> i32 {
-        self.weights
-            .iter()
-            .filter_map(|p| {
-                if p.placement == placement {
-                    Some(p.weight)
-                } else {
-                    None
-                }
-            })
-            .sum()
-    }
-
-    fn is_balanced(&self) -> bool {
-        self.weight(Placement::Legs) == self.weight(Placement::Trunk1)
-            && self.weight(Placement::Legs) == self.weight(Placement::Trunk2)
-    }
-
-    fn count(&self, placement: Placement) -> usize {
-        self.weights
-            .iter()
-            .filter(|p| p.placement == placement)
-            .count()
-    }
-
-    fn len(&self) -> usize {
-        self.weights.len()
-    }
-}
-
-impl Ord for Layout {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match self
-            .count(Placement::Legs)
-            .cmp(&other.count(Placement::Legs))
-        {
-            Ordering::Equal => self.e_q().cmp(&other.e_q()),
-            Ordering::Less => Ordering::Less,
-            Ordering::Greater => Ordering::Greater,
-        }
-    }
-}
-
-impl PartialOrd for Layout {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
+fn e_q(weights: &Vec<i32>) -> u128 {
+    weights.iter().fold(1u128, |s, i| s * *i as u128)
 }
 
 pub fn run() {
@@ -113,7 +20,7 @@ pub fn run() {
 
     let fills = fill(&weights, balance, 0, 3);
     let legs = fills[0].clone();
-    println!("Result: {:?} - {}", legs, Layout::raw_e_q(&legs));
+    println!("Result: {:?} - {}", legs, e_q(&legs));
 }
 
 pub fn run_e() {
@@ -131,7 +38,7 @@ pub fn run_e() {
 
     let fills = fill(&weights, balance, 0, 4);
     let legs = fills[0].clone();
-    println!("Result: {:?} - {}", legs, Layout::raw_e_q(&legs));
+    println!("Result: {:?} - {}", legs, e_q(&legs));
 }
 
 fn find_balance(weights: &Vec<i32>, iterations: i8) -> i32 {
@@ -142,7 +49,7 @@ fn fill(weights: &Vec<i32>, target: i32, count: usize, iterations: i8) -> Vec<Ve
     if count == 0 {
         for c in 1..weights.len() {
             let found_in_legs = &mut fill(weights, target, c, iterations);
-            found_in_legs.sort_by(|a, b| Layout::raw_e_q(&a).cmp(&Layout::raw_e_q(b)));
+            found_in_legs.sort_by(|a, b| e_q(&a).cmp(&e_q(b)));
             for legs_variant in found_in_legs {
                 let mut result = vec![legs_variant.clone()];
                 for it in 1..iterations {
