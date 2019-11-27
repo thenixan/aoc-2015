@@ -27,5 +27,5 @@ Implemented in Rust
 - [x] Day 21
 - [x] Day 22
 - [x] Day 23
-- [ ] Day 24 https://github.com/thenixan/aoc-2015/pull/1
+- [x] Day 24
 - [ ] Day 25
