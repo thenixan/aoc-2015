@@ -102,19 +102,14 @@ pub fn run() {
     let input = File::open("inputs/task_24").unwrap();
     let input = BufReader::new(input);
 
-    let mut weights = input
+    let weights = input
         .lines()
         .filter_map(|s| s.ok())
         .map(|l| l.parse::<i32>())
         .filter_map(|s| s.ok())
         .collect::<Vec<i32>>();
 
-    weights.sort();
-    weights.reverse();
-    // Result: [1, 89, 97, 103, 109, 113] - 10952264083
-    // Result: [113, 109, 107, 103, 79, 1] - 10723906903
-
-    let balance = find_balance(&weights);
+    let balance = find_balance(&weights, 3);
 
     let fills = fill(&weights, balance, 0, 3);
     let legs = fills[0].clone();
@@ -125,22 +120,22 @@ pub fn run_e() {
     let input = File::open("inputs/task_24").unwrap();
     let input = BufReader::new(input);
 
-    let mut weights = input
+    let weights = input
         .lines()
         .filter_map(|s| s.ok())
         .map(|l| l.parse::<i32>())
         .filter_map(|s| s.ok())
         .collect::<Vec<i32>>();
 
-    let balance = find_balance(&weights);
+    let balance = find_balance(&weights, 4);
 
     let fills = fill(&weights, balance, 0, 4);
     let legs = fills[0].clone();
     println!("Result: {:?} - {}", legs, Layout::raw_e_q(&legs));
 }
 
-fn find_balance(weights: &Vec<i32>) -> i32 {
-    weights.iter().sum::<i32>() / 3
+fn find_balance(weights: &Vec<i32>, iterations: i8) -> i32 {
+    weights.iter().sum::<i32>() / iterations as i32
 }
 
 fn fill(weights: &Vec<i32>, target: i32, count: usize, iterations: i8) -> Vec<Vec<i32>> {
@@ -187,25 +182,19 @@ fn fill(weights: &Vec<i32>, target: i32, count: usize, iterations: i8) -> Vec<Ve
         }
         return result;
     } else {
-        let mut i = 0;
         let mut result = vec![];
         let mut filtered_weights = weights.clone();
-        while i < weights.len() && weights[i] < target {
-            filtered_weights = filtered_weights
-                .into_iter()
-                .filter_map(|e| if e == weights[i] { None } else { Some(e) })
-                .collect();
+        while let Some(next) = filtered_weights.pop() {
             let filled = fill(
-                &filtered_weights,
-                target - weights[i],
+                &filtered_weights.clone(),
+                target - next,
                 count - 1,
                 iterations,
             );
             for mut f in filled {
-                f.push(weights[i]);
+                f.push(next);
                 result.push(f);
             }
-            i += 1;
         }
         return result;
     }
